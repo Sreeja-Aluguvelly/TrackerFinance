@@ -14,7 +14,7 @@ const LoginForm = () => {
     e.preventDefault();
     try {
       await login({ username, password });
-      navigate('/expenses');  // Redirect to expenses page after login
+      navigate('/dashboard');  // Redirect to expenses page after login
     } catch (error) {
       alert('Invalid credentials');
     }

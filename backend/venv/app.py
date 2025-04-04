@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
@@ -34,6 +35,7 @@ class Expense(db.Model):
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
 
+
 # Register route
 @app.route('/register', methods=['POST'])
 def register():
@@ -66,11 +68,85 @@ def login():
 @jwt_required()
 def add_expense():
     user_id = get_jwt_identity()
+    data = request.get_json()
+
+    try:
+        # Check if an expense with the same category already exists
+        existing_expense = Expense.query.filter_by(user_id=user_id, category=data.get('category')).first()
+
+        if existing_expense:
+            # If expense with same category exists, update the amount and date
+            existing_expense.amount += data.get('amount')
+            existing_expense.date = datetime.strptime(data.get('date'), "%Y-%m-%d")
+            db.session.commit()
+
+            return jsonify({
+                "id": existing_expense.id,
+                "category": existing_expense.category,
+                "amount": existing_expense.amount,
+                "date": existing_expense.date.strftime("%Y-%m-%d")
+            }), 200
+        else:
+            # If no expense exists, add a new one
+            new_expense = Expense(
+                user_id=user_id,
+                category=data.get('category'),
+                amount=data.get('amount'),
+                date=datetime.strptime(data.get('date'), "%Y-%m-%d")
+            )
+            db.session.add(new_expense)
+            db.session.commit()
+
+            return jsonify({
+                "id": new_expense.id,
+                "category": new_expense.category,
+                "amount": new_expense.amount,
+                "date": new_expense.date.strftime("%Y-%m-%d")
+            }), 201
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
+# Edit expense route
+@app.route('/expenses/<int:id>', methods=['PUT'])
+@jwt_required()
+def edit_expense(id):
+    user_id = get_jwt_identity()
+    expense = Expense.query.filter_by(id=id, user_id=user_id).first()
+
+    if not expense:
+        return jsonify({"message": "Expense not found"}), 404
+
     data = request.json
-    new_expense = Expense(user_id=user_id, category=data['category'], amount=data['amount'], date=data['date'])
-    db.session.add(new_expense)
-    db.session.commit()
-    return jsonify({"message": "Expense added!"})
+    expense.category = data['category']
+    expense.amount = data['amount']
+    expense.date = data['date']
+
+    try:
+        db.session.commit()
+        return jsonify({"message": "Expense updated!"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+# Delete expense route
+@app.route('/expenses/<int:id>', methods=['DELETE'])
+@jwt_required()
+def delete_expense(id):
+    user_id = get_jwt_identity()
+    expense = Expense.query.filter_by(id=id, user_id=user_id).first()
+
+    if not expense:
+        return jsonify({"message": "Expense not found"}), 404
+
+    try:
+        db.session.delete(expense)
+        db.session.commit()
+        return jsonify({"message": "Expense deleted successfully"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": str(e)}), 500
+
 
 # Get expenses route
 @app.route('/expenses', methods=['GET'])
@@ -78,7 +154,7 @@ def add_expense():
 def get_expenses():
     user_id = get_jwt_identity()
     expenses = Expense.query.filter_by(user_id=user_id).all()
-    return jsonify([{"category": e.category, "amount": e.amount, "date": e.date.strftime("%Y-%m-%d")} for e in expenses])
+    return jsonify([{"id": e.id,"category": e.category, "amount": e.amount, "date": e.date.strftime("%Y-%m-%d")} for e in expenses])
 
 # Main method to run the app
 if __name__ == '__main__':
