@@ -11,9 +11,6 @@ const Expenses = () => {
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState('');
   const [editingId, setEditingId] = useState(null);
-
-
-
   const { authState } = useAuth();
   const token = authState.token;
   const navigate = useNavigate();
@@ -78,7 +75,8 @@ const Expenses = () => {
         } else {
           // Add a new expense if the category doesn't exist
           const response = await addExpense(token, expenseData);
-          setExpenses([...expenses, response.data]);
+      // Update the local state immediately with the new expense
+       setExpenses(newExpenses => [...newExpenses, response]);
         }
   
         // Reset the form fields

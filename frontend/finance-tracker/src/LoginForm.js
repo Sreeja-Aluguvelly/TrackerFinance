@@ -16,7 +16,7 @@ const LoginForm = () => {
       await login({ username, password });
       navigate('/dashboard');  // Redirect to expenses page after login
     } catch (error) {
-      alert('Invalid credentials');
+      alert(error.message);
     }
   };
 

@@ -16,8 +16,9 @@ const RegisterForm = () => {
     try {
       await register(userData);
       navigate('/login');  // Redirect to login page after successful registration
-    } catch (error) {
-      alert('Registration failed');
+    } 
+    catch (error) {
+        alert(error.message);
     }
   };
 

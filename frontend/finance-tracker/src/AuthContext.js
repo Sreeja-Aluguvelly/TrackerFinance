@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
       setAuthState({ isAuthenticated: true, token });
       localStorage.setItem('token', token);
     } catch (error) {
-      console.error('Login failed', error);
+      throw new Error('Invalid credentials');
     }
   };
 
@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
       await registerUser(userData);
       alert('Registration Successful');
     } catch (error) {
-      console.error('Registration failed', error);
+      throw new Error('Registration failed');
     }
   };
 
