@@ -8,6 +8,7 @@ import Dashboard from './Dashboard';
 import { AuthProvider, useAuth } from './AuthContext';
 import ProtectedRoute from './ProtectedRoute';
 import HomePage from './HomePage';
+import Chatbot from './Chatbot';
 
 const Navbar = () => {
   const { authState, logout } = useAuth();
@@ -27,6 +28,7 @@ const Navbar = () => {
             <>
             <Button color="inherit" component={Link} to="/dashboard">Dashboard</Button>
             <Button color="inherit" component={Link} to="/expenses">Expenses</Button>
+            <Button color="inherit" component={Link} to="/chatbot">Chat</Button>
             <Button color="inherit" onClick={logout}>Logout</Button>
             </>
           )}
@@ -48,6 +50,7 @@ const App = () => {
             <Route path="/register" element={<RegisterForm />} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/expenses" element={<ProtectedRoute><Expenses /></ProtectedRoute>} />
+            <Route path="/chatbot" element={<ProtectedRoute><Chatbot /></ProtectedRoute>} />
           </Routes>
         </Box>
       </Router>

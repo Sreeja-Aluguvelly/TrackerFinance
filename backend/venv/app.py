@@ -3,12 +3,29 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+import os
+from datetime import datetime, timedelta
+from langchain.prompts import PromptTemplate
+from langchain.chains.llm import LLMChain
+from langchain_ollama import ChatOllama
+from langchain.prompts import ChatPromptTemplate
+from langchain_core.runnables import RunnableSequence
+
+
 
 # Initialize Flask app
 app = Flask(__name__)
 
 # Enable CORS
 CORS(app)
+
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["http://localhost:3000"],
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "allow_headers": ["Authorization", "Content-Type"]
+    }
+})
 
 # Database configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://sreejaaluguvelly:Sreeja@localhost:5432/yourdatabase'
@@ -50,8 +67,6 @@ def register():
     except Exception as e:
         db.session.rollback()
         return jsonify({'error':str(e)}),500
-
-
 
 # Login route
 @app.route('/login', methods=['POST'])
@@ -129,6 +144,7 @@ def edit_expense(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
+
 # Delete expense route
 @app.route('/expenses/<int:id>', methods=['DELETE'])
 @jwt_required()
@@ -155,6 +171,32 @@ def get_expenses():
     user_id = get_jwt_identity()
     expenses = Expense.query.filter_by(user_id=user_id).all()
     return jsonify([{"id": e.id,"category": e.category, "amount": e.amount, "date": e.date.strftime("%Y-%m-%d")} for e in expenses])
+
+# Chat route for AI assistance
+@app.route('/chat', methods=['POST'])
+def chat_with_assistant():
+    data = request.get_json()
+    print("Incoming request:", data)
+    user_question = data.get("question")
+
+    if not user_question:
+        return jsonify({"error": "No question provided"}), 400
+
+    try:
+        # Build the LangChain pipeline
+        prompt = ChatPromptTemplate.from_messages([
+            ("system", "You are a helpful assistant that answers questions about user expenses."),
+            ("user", "{question}")
+        ])
+        llm = ChatOllama(model="llama2")
+        chain = prompt | llm
+
+        # Get the response
+        result = chain.invoke({"question": user_question})
+        return jsonify({"response": result.content})
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 # Main method to run the app
 if __name__ == '__main__':
