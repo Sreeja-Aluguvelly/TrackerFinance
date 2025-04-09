@@ -6,12 +6,7 @@ from flask_jwt_extended import JWTManager, create_access_token, jwt_required, ge
 import os
 from datetime import datetime, timedelta
 from langchain.prompts import PromptTemplate
-from langchain.chains.llm import LLMChain
 from langchain_ollama import ChatOllama
-from langchain.prompts import ChatPromptTemplate
-from langchain_core.runnables import RunnableSequence
-
-
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -51,7 +46,6 @@ class Expense(db.Model):
     category = db.Column(db.String(100), nullable=False)
     amount = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
-
 
 # Register route
 @app.route('/register', methods=['POST'])
@@ -174,26 +168,37 @@ def get_expenses():
 
 # Chat route for AI assistance
 @app.route('/chat', methods=['POST'])
-def chat_with_assistant():
+@jwt_required()
+def chat():
+    identity = get_jwt_identity()
     data = request.get_json()
     print("Incoming request:", data)
-    user_question = data.get("question")
+    question = data.get("question")
+    if not question:
+        return jsonify({'error': 'Question is required'}), 400
+    # Fetch expenses from DB for the logged-in user
+    expenses = Expense.query.filter_by(user_id=identity).all()
+    if not expenses:
+        return jsonify({"response": "No expenses found for the user."}), 200
 
-    if not user_question:
-        return jsonify({"error": "No question provided"}), 400
+    # Format expenses into natural language
+    expense_summary = ", ".join(
+        f"{e.category} ${e.amount}" for e in expenses
+    )
+    prompt_text = f"""
+    User expenses: {expense_summary}.
+    Question: {question}
+    """
 
+    # Send to LLM
     try:
-        # Build the LangChain pipeline
-        prompt = ChatPromptTemplate.from_messages([
-            ("system", "You are a helpful assistant that answers questions about user expenses."),
-            ("user", "{question}")
-        ])
-        llm = ChatOllama(model="llama2")
-        chain = prompt | llm
+        ollama_model = ChatOllama(model="llama2")  # Make sure `ollama pull llama2` was successful
+        prompt = PromptTemplate.from_template("Answer based on this:\n{input}")
+        chain = prompt | ollama_model
 
-        # Get the response
-        result = chain.invoke({"question": user_question})
-        return jsonify({"response": result.content})
+        response = chain.invoke({"input": prompt_text})
+        print("Response:", response.content)
+        return jsonify({"response": response.content}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500

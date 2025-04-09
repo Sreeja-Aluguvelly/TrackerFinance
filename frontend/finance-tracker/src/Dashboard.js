@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Pie, Line } from 'react-chartjs-2';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, LineElement } from 'chart.js';
-import { getExpenses } from './api'; // Adjust import path based on your structure
+import { getExpenses } from './api';
 import { useAuth } from './AuthContext';
 import { Paper, Grid, Typography, Box } from '@mui/material';
 

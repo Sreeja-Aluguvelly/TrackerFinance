@@ -1,7 +1,6 @@
-// src/api.js
 import axios from 'axios';
 
-const API_URL = 'http://127.0.0.1:5000'; // Your backend API URL
+const API_URL = 'http://127.0.0.1:5000'; // backend API URL
 
 export const registerUser = (userData) => axios.post(`${API_URL}/register`, userData);
 export const loginUser = (userData) => axios.post(`${API_URL}/login`, userData);
@@ -12,6 +11,7 @@ export const getExpenses = (token) => axios.get(`${API_URL}/expenses`, {
   }
 });
 
+//Add an expense
 export const addExpense = async (token, expenseData) => {
   const response = await axios.post(`${API_URL}/expenses`, expenseData, {
     headers: { Authorization: `Bearer ${token}` },
@@ -34,3 +34,20 @@ export const deleteExpense = async (token, expenseId) => await axios.delete(`${A
     Authorization: `Bearer ${token}`
   }
 });
+
+export const askChatbot = async (token, question) => {
+  const response = await axios.post(
+    `${API_URL}/chat`,
+    {
+      question
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+
+  return response.data;
+};

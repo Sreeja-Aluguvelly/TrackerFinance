@@ -127,7 +127,7 @@ const Expenses = () => {
                   required
                   sx={{
                     '& .MuiOutlinedInput-root': {
-                      height: '56px', // Matching TextField height
+                      height: '56px',
                     },
                   }}
                 >

@@ -1,6 +1,5 @@
-// src/AuthContext.js
 import React, { createContext, useState, useContext } from 'react';
-import { loginUser, registerUser } from './api';  // Import the functions
+import { loginUser, registerUser } from './api';
 
 const AuthContext = createContext();
 

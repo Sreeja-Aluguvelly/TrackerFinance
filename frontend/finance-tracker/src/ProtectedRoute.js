@@ -10,7 +10,7 @@ const ProtectedRoute = ({ children }) => {
     return <Navigate to="/login" />;
   }
 
-  return children;  // Render the protected content (Expenses page)
+  return children;  // Render the protected content
 };
 
 export default ProtectedRoute;

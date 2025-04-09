@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
 import { TextField, Button, Typography, Paper, Stack, Box } from '@mui/material';
+import { useAuth } from './AuthContext'; 
+import { askChatbot } from './api'; 
+import ReactMarkdown from 'react-markdown';
 
 const Chatbot = () => {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+  const { authState } = useAuth();
 
   const sendMessage = async () => {
     if (!input.trim()) return;
@@ -12,23 +16,26 @@ const Chatbot = () => {
     setMessages(newMessages);
 
     try {
-      // Send message to the backend via API and get the response from AI
-      const response = await fetch('http://127.0.0.1:5000/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          question: input,
-          user_id: "user1",
-        }),
-      });
+      const data = await askChatbot(authState.token, input);
 
-      const data = await response.json();
-      setMessages([...newMessages, { sender: 'bot', text: data.reply }]);
-      setInput('');
+      setMessages([
+        ...newMessages,
+        {
+          sender: 'bot',
+          text: data.response,
+        },
+      ]);
     } catch (error) {
       console.error('Error:', error);
+      setMessages([
+        ...newMessages,
+        {
+          sender: 'bot',
+          text: 'Sorry, something went wrong. 🤖',
+        },
+      ]);
+    } finally {
+      setInput('');
     }
   };
 
@@ -40,15 +47,22 @@ const Chatbot = () => {
           {messages.map((msg, idx) => (
             <Box
               key={idx}
+              component="pre"
               sx={{
                 textAlign: msg.sender === 'user' ? 'right' : 'left',
                 backgroundColor: msg.sender === 'user' ? '#1E40AF' : '#E5E7EB',
                 color: msg.sender === 'user' ? 'white' : 'black',
                 p: 1.5,
                 borderRadius: 2,
+                whiteSpace: 'pre-wrap',
+                wordBreak: 'break-word',
               }}
             >
-              {msg.text}
+              {msg.sender === 'bot' ? (
+                <ReactMarkdown>{msg.text}</ReactMarkdown>
+              ) : (
+                msg.text
+              )}
             </Box>
           ))}
         </Stack>
